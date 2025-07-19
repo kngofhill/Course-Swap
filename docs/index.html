@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CourseSwap - Sell Your Online Courses</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    body { font-family: sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+  <!-- Header -->
+  <header class="bg-blue-600 text-white p-4">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">CourseSwap</h1>
+      <nav>
+        <a href="#" class="mx-2 hover:underline">Home</a>
+        <a href="#" class="mx-2 hover:underline">Browse</a>
+        <a href="#" class="mx-2 hover:underline">Post</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="py-8">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-xl font-semibold mb-4">Available Courses</h2>
+      <div id="courseList" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Courses will be injected here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Post New Course Form -->
+  <section class="bg-white py-8 border-t mt-10">
+    <div class="max-w-3xl mx-auto px-4">
+      <h2 class="text-xl font-semibold mb-4">Post a New Course</h2>
+      <form id="courseForm" class="space-y-4">
+        <input type="text" id="courseName" placeholder="Course Title" required class="w-full p-2 border rounded" />
+        <input type="text" id="price" placeholder="Price (USD)" required class="w-full p-2 border rounded" />
+        <input type="text" id="progress" placeholder="Progress (e.g. 25%)" required class="w-full p-2 border rounded" />
+        <input type="text" id="seller" placeholder="Your Contact (Telegram/Email)" required class="w-full p-2 border rounded" />
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Post Course</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-blue-600 text-white text-center p-4 mt-8">
+    <p>&copy; 2025 CourseSwap. Made for students who want to help others.</p>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    const form = document.getElementById("courseForm");
+    const courseList = document.getElementById("courseList");
+
+    const courses = [
+      { name: "Skillbox Frontend Dev", price: "$120", progress: "20%", seller: "@yourtelegram" },
+      { name: "Udemy Python Bootcamp", price: "$50", progress: "10%", seller: "@pythonfan" },
+    ];
+
+    function displayCourses() {
+      courseList.innerHTML = "";
+      courses.forEach(course => {
+        courseList.innerHTML += `
+          <div class="bg-white rounded shadow p-4">
+            <h3 class="text-lg font-bold">${course.name}</h3>
+            <p class="mt-1">Progress: ${course.progress}</p>
+            <p class="mt-1">Price: ${course.price}</p>
+            <p class="mt-1 text-sm text-gray-600">Contact: ${course.seller}</p>
+            <button class="mt-4 bg-green-500 text-white px-3 py-1 rounded">Contact</button>
+          </div>
+        `;
+      });
+    }
+
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const name = document.getElementById("courseName").value;
+      const price = document.getElementById("price").value;
+      const progress = document.getElementById("progress").value;
+      const seller = document.getElementById("seller").value;
+
+      courses.push({ name, price, progress, seller });
+      displayCourses();
+      form.reset();
+    });
+
+    // Initial render
+    displayCourses();
+  </script>
+</body>
+</html>
