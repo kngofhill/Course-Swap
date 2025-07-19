@@ -2,50 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Course Swap</title>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    .form-container {
-      max-width: 300px;
-      margin: 0 auto;
-    }
-    #main-content {
-      display: none;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CourseSwap</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-900">
 
-  <div class="form-container" id="auth-forms">
-    <h2>Login</h2>
-    <input type="email" id="login-email" placeholder="Email"><br>
-    <input type="password" id="login-password" placeholder="Password"><br>
-    <button onclick="login()">Login</button>
-    <p>Don't have an account?</p>
-    <button onclick="toggleForms()">Register</button>
-
-    <div id="register-form" style="display:none;">
-      <h2>Register</h2>
-      <input type="email" id="register-email" placeholder="Email"><br>
-      <input type="password" id="register-password" placeholder="Password"><br>
-      <button onclick="register()">Register</button>
+  <!-- Login/Register Page -->
+  <div id="auth-section" class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <h2 class="text-2xl font-bold mb-6 text-center">CourseSwap</h2>
+      <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded mb-4">
+      <input id="password" type="password" placeholder="Password" class="w-full p-2 border rounded mb-4">
+      <div class="flex justify-between">
+        <button onclick="login()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Login</button>
+        <button onclick="register()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Register</button>
+      </div>
     </div>
   </div>
 
-  <div id="main-content">
-    <h1>Welcome to Course Swap!</h1>
-    <button onclick="logout()">Logout</button>
-    <div id="courses"></div>
+  <!-- Main App -->
+  <div id="app-section" class="hidden p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">Welcome to CourseSwap</h1>
+      <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
+    </div>
+
+    <!-- Post a Course -->
+    <div class="bg-white p-6 rounded shadow mb-6">
+      <h2 class="text-xl font-semibold mb-4">Post a Course</h2>
+      <input id="courseTitle" placeholder="Course title" class="w-full p-2 border rounded mb-2">
+      <input id="platform" placeholder="Platform (Skillbox, etc.)" class="w-full p-2 border rounded mb-2">
+      <input id="description" placeholder="Description or notes" class="w-full p-2 border rounded mb-4">
+      <button onclick="postCourse()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Post Course</button>
+    </div>
+
+    <!-- View Courses -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">Available Courses</h2>
+      <div id="courseList" class="space-y-4"></div>
+    </div>
   </div>
 
-  <script>
+  <script type="module">
+    // Firebase Config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-auth.js";
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyBcP87lbBOJ9sNR-PF4ceY-GKAKKXFLOdk",
       authDomain: "course-swap-5dcef.firebaseapp.com",
@@ -56,59 +63,84 @@
       measurementId: "G-H3SZZ4H1YX"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const database = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getDatabase();
 
-    function toggleForms() {
-      const regForm = document.getElementById("register-form");
-      regForm.style.display = regForm.style.display === "none" ? "block" : "none";
-    }
+    // DOM Elements
+    const authSection = document.getElementById("auth-section");
+    const appSection = document.getElementById("app-section");
+    const courseList = document.getElementById("courseList");
 
+    // Auth Functions
     function login() {
-      const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
-
-      auth.signInWithEmailAndPassword(email, password)
-        .then(user => {
-          showMainContent();
-        })
-        .catch(error => alert(error.message));
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      signInWithEmailAndPassword(auth, email, password)
+        .catch(error => alert("Login Failed: " + error.message));
     }
 
     function register() {
-      const email = document.getElementById("register-email").value;
-      const password = document.getElementById("register-password").value;
-
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(user => {
-          alert("Registered successfully. You can now log in.");
-        })
-        .catch(error => alert(error.message));
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      createUserWithEmailAndPassword(auth, email, password)
+        .catch(error => alert("Register Failed: " + error.message));
     }
 
     function logout() {
-      auth.signOut().then(() => {
-        document.getElementById("auth-forms").style.display = "block";
-        document.getElementById("main-content").style.display = "none";
-      });
+      signOut(auth);
     }
 
-    function showMainContent() {
-      document.getElementById("auth-forms").style.display = "none";
-      document.getElementById("main-content").style.display = "block";
-      displayCourses(); // initial render
-    }
-
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
       if (user) {
-        showMainContent();
+        authSection.classList.add("hidden");
+        appSection.classList.remove("hidden");
+        displayCourses();
+      } else {
+        authSection.classList.remove("hidden");
+        appSection.classList.add("hidden");
       }
     });
 
+    // Course Posting
+    window.postCourse = function () {
+      const courseTitle = document.getElementById("courseTitle").value;
+      const platform = document.getElementById("platform").value;
+      const description = document.getElementById("description").value;
+      const userId = auth.currentUser?.uid;
+
+      if (!courseTitle || !platform) return alert("Fill all fields");
+
+      push(ref(db, "courses"), {
+        title: courseTitle,
+        platform: platform,
+        description: description,
+        user: userId,
+        postedAt: new Date().toISOString()
+      });
+
+      document.getElementById("courseTitle").value = "";
+      document.getElementById("platform").value = "";
+      document.getElementById("description").value = "";
+    }
+
+    // Display Courses
     function displayCourses() {
-      // Placeholder: you can fetch and render courses from Firebase Realtime Database here
-      document.getElementById("courses").innerHTML = "<p>No courses available yet.</p>";
+      onValue(ref(db, "courses"), snapshot => {
+        courseList.innerHTML = "";
+        snapshot.forEach(child => {
+          const course = child.val();
+          const card = document.createElement("div");
+          card.className = "p-4 bg-gray-50 border rounded shadow-sm";
+          card.innerHTML = `
+            <h3 class="text-lg font-semibold">${course.title}</h3>
+            <p class="text-sm text-gray-700">Platform: ${course.platform}</p>
+            <p class="text-sm text-gray-600">${course.description}</p>
+            <p class="text-xs text-gray-400 mt-1">Posted: ${new Date(course.postedAt).toLocaleString()}</p>
+          `;
+          courseList.appendChild(card);
+        });
+      });
     }
   </script>
 </body>
