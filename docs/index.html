@@ -5,35 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CourseSwap - Sell Your Online Courses</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
   <style>
     body { font-family: sans-serif; }
   </style>
 </head>
 <body class="bg-gray-100">
-
-  <!-- Header -->
   <header class="bg-blue-600 text-white p-4">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
       <h1 class="text-2xl font-bold">CourseSwap</h1>
       <nav>
-        <a href="#" class="mx-2 hover:underline">Home</a>
-        <a href="#" class="mx-2 hover:underline">Browse</a>
-        <a href="#" class="mx-2 hover:underline">Post</a>
+        <a href="#" class="mx-2 hover:underline" onclick="logout()">Logout</a>
       </nav>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="py-8">
     <div class="max-w-6xl mx-auto px-4">
       <h2 class="text-xl font-semibold mb-4">Available Courses</h2>
-      <div id="courseList" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Courses will be injected here -->
-      </div>
+      <div id="courseList" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
     </div>
   </main>
 
-  <!-- Post New Course Form -->
   <section class="bg-white py-8 border-t mt-10">
     <div class="max-w-3xl mx-auto px-4">
       <h2 class="text-xl font-semibold mb-4">Post a New Course</h2>
@@ -47,33 +42,58 @@
     </div>
   </section>
 
-  <!-- Footer -->
   <footer class="bg-blue-600 text-white text-center p-4 mt-8">
     <p>&copy; 2025 CourseSwap. Made for students who want to help others.</p>
   </footer>
 
-  <!-- JavaScript -->
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcP87lbBOJ9sNR-PF4ceY-GKAKKXFLOdk",
+      authDomain: "course-swap-5dcef.firebaseapp.com",
+      projectId: "course-swap-5dcef",
+      storageBucket: "course-swap-5dcef.firebasestorage.app",
+      messagingSenderId: "249900482208",
+      appId: "1:249900482208:web:ccc6b44c127c2402afd3c5",
+      measurementId: "G-H3SZZ4H1YX"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // Authentication
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        const email = prompt("Enter your email to log in:");
+        const password = prompt("Enter your password:");
+        auth.signInWithEmailAndPassword(email, password).catch(() => alert("Login failed"));
+      } else {
+        loadCourses();
+      }
+    });
+
+    function logout() {
+      auth.signOut();
+    }
+
     const form = document.getElementById("courseForm");
     const courseList = document.getElementById("courseList");
 
-    const courses = [
-      { name: "Skillbox Frontend Dev", price: "$120", progress: "20%", seller: "@yourtelegram" },
-      { name: "Udemy Python Bootcamp", price: "$50", progress: "10%", seller: "@pythonfan" },
-    ];
-
-    function displayCourses() {
-      courseList.innerHTML = "";
-      courses.forEach(course => {
-        courseList.innerHTML += `
-          <div class="bg-white rounded shadow p-4">
-            <h3 class="text-lg font-bold">${course.name}</h3>
-            <p class="mt-1">Progress: ${course.progress}</p>
-            <p class="mt-1">Price: ${course.price}</p>
-            <p class="mt-1 text-sm text-gray-600">Contact: ${course.seller}</p>
-            <button class="mt-4 bg-green-500 text-white px-3 py-1 rounded">Contact</button>
-          </div>
-        `;
+    function loadCourses() {
+      db.ref("courses").on("value", snapshot => {
+        courseList.innerHTML = "";
+        snapshot.forEach(child => {
+          const course = child.val();
+          courseList.innerHTML += `
+            <div class="bg-white rounded shadow p-4">
+              <h3 class="text-lg font-bold">${course.name}</h3>
+              <p class="mt-1">Progress: ${course.progress}</p>
+              <p class="mt-1">Price: ${course.price}</p>
+              <p class="mt-1 text-sm text-gray-600">Contact: ${course.seller}</p>
+              <button class="mt-4 bg-green-500 text-white px-3 py-1 rounded">Contact</button>
+            </div>
+          `;
+        });
       });
     }
 
@@ -84,10 +104,13 @@
       const progress = document.getElementById("progress").value;
       const seller = document.getElementById("seller").value;
 
-      courses.push({ name, price, progress, seller });
-      displayCourses();
+      db.ref("courses").push({ name, price, progress, seller });
       form.reset();
     });
+  </script>
+</body>
+</html>
+
 
     // Initial render
     displayCourses();
