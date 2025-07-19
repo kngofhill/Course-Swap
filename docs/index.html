@@ -1,34 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CourseSwap</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 font-sans">
-  <div class="min-h-screen flex items-center justify-center">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-      <h2 class="text-2xl font-bold mb-4 text-center">CourseSwap</h2>
-      <div id="auth-section">
-        <input id="email" type="email" placeholder="Email" class="mb-2 w-full px-4 py-2 border rounded" />
-        <input id="password" type="password" placeholder="Password" class="mb-4 w-full px-4 py-2 border rounded" />
-        <div class="flex justify-between">
-          <button onclick="login()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Login</button>
-          <button onclick="register()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Register</button>
-        </div>
-      </div>
-      <div id="main-section" class="hidden mt-6">
-        <h3 class="text-xl font-semibold mb-4">Post Your Course</h3>
-        <input id="courseTitle" type="text" placeholder="Course Title" class="mb-2 w-full px-4 py-2 border rounded" />
-        <textarea id="courseDesc" placeholder="Course Description" class="mb-4 w-full px-4 py-2 border rounded"></textarea>
-        <button onclick="postCourse()" class="bg-purple-600 text-white w-full py-2 rounded hover:bg-purple-700 mb-6">Post Course</button>
+<body class="bg-gray-100 text-gray-900">
+  <div class="container mx-auto px-4 py-10">
+    <div id="auth-section" class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md">
+      <h2 class="text-2xl font-bold mb-4">Вход / Регистрация</h2>
+      <input type="email" id="email" placeholder="Электронная почта" class="w-full p-2 border rounded mb-2">
+      <input type="password" id="password" placeholder="Пароль" class="w-full p-2 border rounded mb-4">
+      <button onclick="login()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full mb-2">Войти</button>
+      <button onclick="register()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full">Зарегистрироваться</button>
+    </div>
 
-        <h3 class="text-xl font-semibold mb-2">Available Courses</h3>
-        <div id="courseList" class="space-y-4 max-h-60 overflow-y-auto"></div>
+    <div id="main-section" class="hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Обмен курсами</h1>
+        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Выйти</button>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+        <h2 class="text-xl font-bold mb-4">Добавить курс</h2>
+        <input type="text" id="courseName" placeholder="Название курса" class="w-full p-2 border rounded mb-2">
+        <input type="text" id="platform" placeholder="Платформа (например, Skillbox)" class="w-full p-2 border rounded mb-2">
+        <input type="text" id="progress" placeholder="Прогресс (например, 20%)" class="w-full p-2 border rounded mb-2">
+        <input type="text" id="price" placeholder="Цена (в рублях)" class="w-full p-2 border rounded mb-2">
+        <input type="text" id="timeLeft" placeholder="Осталось времени (например, 3 месяца)" class="w-full p-2 border rounded mb-4">
+        <button onclick="postCourse()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Опубликовать</button>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">Доступные курсы</h2>
+        <div id="coursesList"></div>
       </div>
     </div>
   </div>
@@ -41,20 +48,24 @@
       storageBucket: "course-swap-5dcef.firebasestorage.app",
       messagingSenderId: "249900482208",
       appId: "1:249900482208:web:ccc6b44c127c2402afd3c5",
-      measurementId: "G-H3SZZ4H1YX"
+      measurementId: "G-H3SZZ4H1YX",
+      databaseURL: "https://course-swap-5dcef-default-rtdb.firebaseio.com"
     };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const database = firebase.database();
+    const db = firebase.database();
+
+    const authSection = document.getElementById('auth-section');
+    const mainSection = document.getElementById('main-section');
 
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
-          document.getElementById("auth-section").classList.add("hidden");
-          document.getElementById("main-section").classList.remove("hidden");
+          authSection.classList.add('hidden');
+          mainSection.classList.remove('hidden');
           displayCourses();
         })
         .catch(error => alert(error.message));
@@ -64,39 +75,56 @@
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       auth.createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          alert("Registration successful! Please login.");
-        })
+        .then(() => login())
         .catch(error => alert(error.message));
     }
 
-    function postCourse() {
-      const title = document.getElementById("courseTitle").value;
-      const desc = document.getElementById("courseDesc").value;
-      const courseData = {
-        title,
-        desc,
-        user: auth.currentUser.email
-      };
-      const newCourseKey = database.ref().child('courses').push().key;
-      const updates = {};
-      updates['/courses/' + newCourseKey] = courseData;
-      database.ref().update(updates).then(() => {
-        alert("Course posted!");
-        displayCourses();
+    function logout() {
+      auth.signOut().then(() => {
+        authSection.classList.remove('hidden');
+        mainSection.classList.add('hidden');
       });
     }
 
+    function postCourse() {
+      const courseName = document.getElementById("courseName").value;
+      const platform = document.getElementById("platform").value;
+      const progress = document.getElementById("progress").value;
+      const price = document.getElementById("price").value;
+      const timeLeft = document.getElementById("timeLeft").value;
+      const user = auth.currentUser;
+
+      if (!user) return;
+
+      const postData = {
+        courseName,
+        platform,
+        progress,
+        price,
+        timeLeft,
+        email: user.email
+      };
+
+      db.ref("courses").push(postData).then(() => displayCourses());
+    }
+
     function displayCourses() {
-      const courseList = document.getElementById("courseList");
-      courseList.innerHTML = "";
-      database.ref('courses').once('value', snapshot => {
-        snapshot.forEach(childSnapshot => {
-          const course = childSnapshot.val();
-          const courseItem = document.createElement("div");
-          courseItem.className = "p-4 border rounded shadow-sm bg-gray-50";
-          courseItem.innerHTML = `<h4 class='font-bold'>${course.title}</h4><p>${course.desc}</p><p class='text-sm text-gray-600'>Posted by: ${course.user}</p>`;
-          courseList.appendChild(courseItem);
+      db.ref("courses").once("value", snapshot => {
+        const coursesList = document.getElementById("coursesList");
+        coursesList.innerHTML = "";
+        snapshot.forEach(child => {
+          const data = child.val();
+          const div = document.createElement("div");
+          div.className = "border p-4 rounded-lg mb-3 bg-gray-50";
+          div.innerHTML = `
+            <strong>Название:</strong> ${data.courseName}<br>
+            <strong>Платформа:</strong> ${data.platform}<br>
+            <strong>Прогресс:</strong> ${data.progress}<br>
+            <strong>Цена:</strong> ${data.price}₽<br>
+            <strong>Осталось времени:</strong> ${data.timeLeft}<br>
+            <strong>Контакт:</strong> ${data.email}
+          `;
+          coursesList.appendChild(div);
         });
       });
     }
